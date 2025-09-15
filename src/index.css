@@ -8,35 +8,53 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Golf-themed color palette */
+    --background: 220 50% 95%;
+    --foreground: 140 30% 15%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 140 30% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 140 30% 15%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Golf course green */
+    --primary: 120 40% 35%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Sand/earth tones */
+    --secondary: 35 25% 85%;
+    --secondary-foreground: 35 30% 25%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 35 15% 90%;
+    --muted-foreground: 35 20% 40%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    /* Bright golf accent */
+    --accent: 45 90% 60%;
+    --accent-foreground: 45 30% 20%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 35 20% 88%;
+    --input: 35 20% 88%;
+    --ring: 120 40% 35%;
 
-    --radius: 0.5rem;
+    /* Game-specific colors */
+    --golf-green: 120 45% 30%;
+    --golf-green-light: 120 50% 45%;
+    --golf-fairway: 105 35% 40%;
+    --golf-sand: 35 40% 75%;
+    --golf-hole: 0 0% 10%;
+    --golf-ball: 0 0% 95%;
+    --golf-tee: 200 30% 25%;
+    
+    /* Gradients */
+    --gradient-sky: linear-gradient(135deg, hsl(200 60% 85%) 0%, hsl(220 50% 75%) 100%);
+    --gradient-course: linear-gradient(180deg, hsl(120 50% 45%) 0%, hsl(105 35% 40%) 100%);
+    --gradient-ui: linear-gradient(135deg, hsl(0 0% 100% / 0.9) 0%, hsl(0 0% 95% / 0.8) 100%);
+
+    --radius: 0.75rem;
 
     --sidebar-background: 0 0% 98%;
 
@@ -101,5 +119,57 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  /* Game UI Components */
+  .game-ui-panel {
+    @apply backdrop-blur-sm border border-border/50 rounded-lg p-4;
+    background: var(--gradient-ui);
+  }
+  
+  .power-meter {
+    @apply relative w-full h-3 bg-muted rounded-full overflow-hidden;
+  }
+  
+  .power-fill {
+    @apply h-full rounded-full transition-all duration-150 ease-out;
+    background: linear-gradient(90deg, hsl(var(--accent)) 0%, hsl(var(--destructive)) 100%);
+  }
+  
+  .aiming-line {
+    @apply absolute pointer-events-none;
+    background: linear-gradient(90deg, hsl(var(--primary)) 0%, transparent 100%);
+  }
+  
+  /* Game animations */
+  .ball-trail {
+    @apply absolute rounded-full opacity-60 animate-ping;
+    background: hsl(var(--golf-ball));
+  }
+  
+  .level-complete {
+    @apply animate-bounce;
+  }
+  
+  /* 3D Scene container */
+  .game-scene {
+    @apply relative w-full h-screen overflow-hidden;
+    background: var(--gradient-sky);
+  }
+}
+
+@layer utilities {
+  .text-golf-green {
+    color: hsl(var(--golf-green));
+  }
+  
+  .bg-golf-green {
+    background-color: hsl(var(--golf-green));
+  }
+  
+  .text-golf-accent {
+    color: hsl(var(--accent));
   }
 }

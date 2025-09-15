@@ -65,25 +65,40 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "ball-roll": {
+          "0%": { transform: "translateX(0) rotate(0deg)" },
+          "100%": { transform: "translateX(100px) rotate(360deg)" },
+        },
+        "power-pulse": {
+          "0%, 100%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.05)", opacity: "0.8" },
+        },
+        "level-transition": {
+          "0%": { transform: "scale(0.9)", opacity: "0" },
+          "100%": { transform: "scale(1)", opacity: "1" },
+        },
+        "hole-in-one": {
+          "0%": { transform: "scale(1) rotate(0deg)" },
+          "25%": { transform: "scale(1.2) rotate(90deg)" },
+          "50%": { transform: "scale(0.8) rotate(180deg)" },
+          "75%": { transform: "scale(1.1) rotate(270deg)" },
+          "100%": { transform: "scale(1) rotate(360deg)" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "ball-roll": "ball-roll 2s ease-out",
+        "power-pulse": "power-pulse 0.8s ease-in-out infinite",
+        "level-transition": "level-transition 0.5s ease-out",
+        "hole-in-one": "hole-in-one 1s ease-in-out",
       },
     },
   },
