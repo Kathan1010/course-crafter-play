@@ -1,11 +1,10 @@
 import { useState, useRef, useCallback } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
+import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { GolfCourse } from './GolfCourse';
-import { GolfBall } from './GolfBall';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { GameBoard } from './GameBoard';
 import { GameUI } from './GameUI';
 import { PowerMeter } from './PowerMeter';
 import { useToast } from '@/hooks/use-toast';
@@ -23,19 +22,32 @@ export interface GameState {
 }
 
 const LEVELS = [
-  { par: 3, name: "Easy Green", difficulty: 1 },
-  { par: 4, name: "Sand Trap", difficulty: 2 },
-  { par: 5, name: "Mountain Course", difficulty: 3 }
+  { id: 1, par: 2, name: "First Tee", difficulty: 1 },
+  { id: 2, par: 3, name: "Gentle Curve", difficulty: 1 },
+  { id: 3, par: 3, name: "Sand Trap", difficulty: 2 },
+  { id: 4, par: 4, name: "Water Hazard", difficulty: 2 },
+  { id: 5, par: 4, name: "Moving Platform", difficulty: 3 },
+  { id: 6, par: 5, name: "Double Dogleg", difficulty: 3 },
+  { id: 7, par: 4, name: "Windmill", difficulty: 3 },
+  { id: 8, par: 5, name: "Loop-de-Loop", difficulty: 4 },
+  { id: 9, par: 6, name: "Pinball Madness", difficulty: 4 },
+  { id: 10, par: 7, name: "The Gauntlet", difficulty: 5 }
 ];
 
 export const MiniGolfGame = () => {
   const { toast } = useToast();
-  const ballRef = useRef<any>();
+  const { levelId } = useParams();
+  const currentLevelId = levelId === 'random' 
+    ? Math.floor(Math.random() * LEVELS.length) + 1 
+    : parseInt(levelId || '1');
+  
+  const currentLevel = LEVELS.find(l => l.id === currentLevelId) || LEVELS[0];
+  
   const [gameState, setGameState] = useState<GameState>({
-    currentLevel: 1,
+    currentLevel: currentLevelId,
     strokes: 0,
     totalStrokes: 0,
-    par: LEVELS[0].par,
+    par: currentLevel.par,
     isAiming: false,
     power: 0,
     aimDirection: 0,
@@ -43,9 +55,9 @@ export const MiniGolfGame = () => {
     gameComplete: false
   });
 
-  const [ballPosition, setBallPosition] = useState([0, 0.1, 4]);
-  const [ballVelocity, setBallVelocity] = useState([0, 0, 0]);
+  const [ballVelocity, setBallVelocity] = useState({ x: 0, y: 0 });
   const [isMoving, setIsMoving] = useState(false);
+  const [resetTrigger, setResetTrigger] = useState(0);
 
   const startAiming = useCallback(() => {
     if (!isMoving && !gameState.levelComplete) {
@@ -66,10 +78,10 @@ export const MiniGolfGame = () => {
 
     const power = gameState.power / 100;
     const angle = gameState.aimDirection;
-    const velocityX = Math.sin(angle) * power * 8;
-    const velocityZ = Math.cos(angle) * power * 8;
+    const velocityX = Math.sin(angle) * power * 12;
+    const velocityY = Math.cos(angle) * power * 12;
 
-    setBallVelocity([velocityX, 0, velocityZ]);
+    setBallVelocity({ x: velocityX, y: velocityY });
     setIsMoving(true);
     setGameState(prev => ({ 
       ...prev, 
@@ -85,59 +97,31 @@ export const MiniGolfGame = () => {
     });
   }, [gameState, toast]);
 
-  const checkHole = useCallback((position: number[]) => {
-    const holePosition = [0, 0, -4]; // Hole is at the end of the course
-    const distance = Math.sqrt(
-      Math.pow(position[0] - holePosition[0], 2) + 
-      Math.pow(position[2] - holePosition[2], 2)
-    );
+  const handleHoleReached = useCallback(() => {
+    if (gameState.levelComplete) return;
     
-    if (distance < 0.3 && !gameState.levelComplete) {
-      setGameState(prev => ({ ...prev, levelComplete: true }));
-      setIsMoving(false);
-      setBallVelocity([0, 0, 0]);
-      
-      const strokesUnderPar = gameState.par - gameState.strokes;
-      let message = "Level Complete!";
-      if (strokesUnderPar > 0) {
-        message = `Birdie! ${strokesUnderPar} under par!`;
-      } else if (strokesUnderPar === 0) {
-        message = "Par! Well played!";
-      }
-      
-      toast({
-        title: message,
-        description: `Completed in ${gameState.strokes} strokes`,
-      });
+    setGameState(prev => ({ ...prev, levelComplete: true }));
+    setIsMoving(false);
+    setBallVelocity({ x: 0, y: 0 });
+    
+    const strokesUnderPar = gameState.par - gameState.strokes;
+    let message = "Level Complete!";
+    if (strokesUnderPar > 0) {
+      message = `Birdie! ${strokesUnderPar} under par!`;
+    } else if (strokesUnderPar === 0) {
+      message = "Par! Well played!";
     }
-  }, [gameState, toast]);
-
-  const nextLevel = useCallback(() => {
-    if (gameState.currentLevel < LEVELS.length) {
-      const nextLevelIndex = gameState.currentLevel;
-      setGameState(prev => ({
-        ...prev,
-        currentLevel: prev.currentLevel + 1,
-        strokes: 0,
-        par: LEVELS[nextLevelIndex].par,
-        levelComplete: false
-      }));
-      setBallPosition([0, 0.1, 4]);
-      setBallVelocity([0, 0, 0]);
-      setIsMoving(false);
-    } else {
-      setGameState(prev => ({ ...prev, gameComplete: true }));
-      toast({
-        title: "Game Complete!",
-        description: `Total strokes: ${gameState.totalStrokes}`,
-      });
-    }
+    
+    toast({
+      title: message,
+      description: `Completed in ${gameState.strokes} strokes`,
+    });
   }, [gameState, toast]);
 
   const resetLevel = useCallback(() => {
-    setBallPosition([0, 0.1, 4]);
-    setBallVelocity([0, 0, 0]);
+    setBallVelocity({ x: 0, y: 0 });
     setIsMoving(false);
+    setResetTrigger(prev => prev + 1);
     setGameState(prev => ({
       ...prev,
       strokes: 0,
@@ -147,71 +131,67 @@ export const MiniGolfGame = () => {
     }));
   }, []);
 
+  const handleBallPositionChange = useCallback((x: number, y: number) => {
+    // Ball position tracking if needed for future features
+  }, []);
+
+  const handleBallStop = useCallback(() => {
+    setIsMoving(false);
+    setBallVelocity({ x: 0, y: 0 });
+  }, []);
+
   return (
-    <div className="game-scene">
-      <Canvas shadows>
-        <PerspectiveCamera makeDefault position={[0, 8, 8]} />
-        <OrbitControls 
-          enablePan={false}
-          maxPolarAngle={Math.PI / 2.5}
-          minDistance={3}
-          maxDistance={15}
-        />
-        
-        {/* Lighting */}
-        <ambientLight intensity={0.4} />
-        <directionalLight
-          position={[10, 10, 5]}
-          intensity={1}
-          castShadow
-          shadow-mapSize-width={2048}
-          shadow-mapSize-height={2048}
-        />
-        
-        <GolfCourse level={gameState.currentLevel} />
-        <GolfBall
-          ref={ballRef}
-          position={ballPosition}
-          velocity={ballVelocity}
-          onPositionChange={setBallPosition}
-          onVelocityChange={setBallVelocity}
-          onStopMoving={() => setIsMoving(false)}
-          onCheckHole={checkHole}
-          isAiming={gameState.isAiming}
-          aimDirection={gameState.aimDirection}
-          power={gameState.power}
-        />
-      </Canvas>
-      
-      {/* Game UI Overlay */}
-      <div className="absolute top-4 left-4 right-4 pointer-events-none">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
+      {/* Header */}
+      <div className="absolute top-4 left-4 right-4 z-20">
         <div className="flex justify-between items-start">
-          <GameUI gameState={gameState} levelInfo={LEVELS[gameState.currentLevel - 1]} />
+          <div className="flex items-center gap-4">
+            <Link to="/levels">
+              <Button variant="outline" size="sm">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Levels
+              </Button>
+            </Link>
+            <GameUI gameState={gameState} levelInfo={currentLevel} />
+          </div>
           
-          <div className="flex gap-2 pointer-events-auto">
+          <div className="flex gap-2">
             <Button 
-              variant="secondary" 
+              variant="outline" 
               size="sm" 
               onClick={resetLevel}
               disabled={isMoving}
             >
+              <RotateCcw className="w-4 h-4 mr-2" />
               Reset
             </Button>
-            {gameState.levelComplete && gameState.currentLevel < LEVELS.length && (
-              <Button 
-                onClick={nextLevel}
-                className="animate-power-pulse"
-              >
-                Next Level
-              </Button>
+            {gameState.levelComplete && (
+              <Link to="/levels">
+                <Button size="sm" className="animate-power-pulse">
+                  🏆 Choose Next Level
+                </Button>
+              </Link>
             )}
           </div>
         </div>
       </div>
       
+      {/* Game Board */}
+      <div className="flex items-center justify-center min-h-screen p-8">
+        <div className="w-full max-w-5xl h-[600px] relative">
+          <GameBoard
+            level={gameState.currentLevel}
+            onBallPosition={handleBallPositionChange}
+            onHoleReached={handleHoleReached}
+            ballVelocity={ballVelocity}
+            resetTrigger={resetTrigger}
+          />
+        </div>
+      </div>
+      
       {/* Aiming Controls */}
       {!isMoving && !gameState.levelComplete && (
-        <div className="absolute bottom-4 left-4 right-4 pointer-events-none">
+        <div className="absolute bottom-4 left-4 right-4 z-20">
           <div className="flex justify-center">
             <PowerMeter
               isAiming={gameState.isAiming}
@@ -226,7 +206,7 @@ export const MiniGolfGame = () => {
       
       {/* Game Complete Screen */}
       {gameState.gameComplete && (
-        <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+        <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-30">
           <Card className="p-8 text-center animate-level-transition">
             <h2 className="text-3xl font-bold mb-4 text-golf-green">
               🏆 Game Complete!
@@ -235,11 +215,18 @@ export const MiniGolfGame = () => {
               Total Score: {gameState.totalStrokes} strokes
             </p>
             <p className="text-muted-foreground mb-6">
-              Thanks for playing Mini Golf 3D!
+              Thanks for playing Mini Golf 2D!
             </p>
-            <Button onClick={() => window.location.reload()}>
-              Play Again
-            </Button>
+            <div className="flex gap-4 justify-center">
+              <Link to="/levels">
+                <Button>
+                  Choose Another Level
+                </Button>
+              </Link>
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                Play Again
+              </Button>
+            </div>
           </Card>
         </div>
       )}
