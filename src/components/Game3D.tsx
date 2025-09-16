@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Text, Plane, Sphere, Box } from '@react-three/drei';
+import { OrbitControls, Text, Plane, Sphere, Box, Line } from '@react-three/drei';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -360,29 +360,17 @@ const GolfCourse3D = ({ level }: { level: number }) => {
 
 // Aiming Line Component
 const AimingLine = ({ start, direction, power }: any) => {
-  const points = [];
   const lineLength = (power / 100) * 5;
-  
-  for (let i = 0; i <= 20; i++) {
+  const points = Array.from({ length: 21 }, (_, i) => {
     const t = i / 20;
-    points.push(
+    return [
       start.x + direction.x * lineLength * t,
       start.y + 0.1,
-      start.z + direction.z * lineLength * t
-    );
-  }
+      start.z + direction.z * lineLength * t,
+    ] as [number, number, number];
+  });
 
   return (
-    <line>
-      <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={points.length / 3}
-          array={new Float32Array(points)}
-          itemSize={3}
-        />
-      </bufferGeometry>
-      <lineBasicMaterial color="#ff0000" opacity={0.7} transparent />
-    </line>
+    <Line points={points} color="#ff0000" opacity={0.7} transparent lineWidth={2} />
   );
 };
