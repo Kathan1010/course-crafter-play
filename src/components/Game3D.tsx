@@ -8,8 +8,7 @@ import { ArrowLeft, RotateCcw } from 'lucide-react';
 import { GameUI3D, GameState3D } from './GameUI3D';
 import { PowerMeter3D } from './PowerMeter3D';
 import { useToast } from '@/hooks/use-toast';
-import { Vector3 } from 'three';
-
+import * as THREE from 'three';
 
 const LEVELS = [
   { id: 1, par: 2, name: "First Tee", difficulty: 1 },
@@ -45,10 +44,9 @@ export const Game3D = () => {
     gameComplete: false
   });
 
-  const [ballPosition, setBallPosition] = useState<Vector3>(new Vector3(0, 0.1, 8));
-  const [ballVelocity, setBallVelocity] = useState<Vector3>(new Vector3(0, 0, 0));
+  const [ballPosition, setBallPosition] = useState(new THREE.Vector3(0, 0.1, 8));
+  const [ballVelocity, setBallVelocity] = useState(new THREE.Vector3(0, 0, 0));
   const [isMoving, setIsMoving] = useState(false);
-  const ballRef = useRef<any>();
 
   const startAiming = useCallback(() => {
     if (!isMoving && !gameState.levelComplete) {
@@ -71,7 +69,7 @@ export const Game3D = () => {
     const velocityX = gameState.aimDirection.x * power * 15;
     const velocityZ = gameState.aimDirection.z * power * 15;
 
-    setBallVelocity(new Vector3(velocityX, 0, velocityZ));
+    setBallVelocity(new THREE.Vector3(velocityX, 0, velocityZ));
     setIsMoving(true);
     setGameState(prev => ({ 
       ...prev, 
@@ -92,7 +90,7 @@ export const Game3D = () => {
     
     setGameState(prev => ({ ...prev, levelComplete: true }));
     setIsMoving(false);
-    setBallVelocity(new Vector3(0, 0, 0));
+    setBallVelocity(new THREE.Vector3(0, 0, 0));
     
     const strokesUnderPar = gameState.par - gameState.strokes;
     let message = "Level Complete!";
@@ -109,8 +107,8 @@ export const Game3D = () => {
   }, [gameState, toast]);
 
   const resetLevel = useCallback(() => {
-    setBallPosition(new Vector3(0, 0.1, 8));
-    setBallVelocity(new Vector3(0, 0, 0));
+    setBallPosition(new THREE.Vector3(0, 0.1, 8));
+    setBallVelocity(new THREE.Vector3(0, 0, 0));
     setIsMoving(false);
     setGameState(prev => ({
       ...prev,
@@ -187,7 +185,6 @@ export const Game3D = () => {
           
           {/* Golf Ball */}
           <GolfBall3D 
-            ref={ballRef}
             position={ballPosition}
             velocity={ballVelocity}
             isMoving={isMoving}
@@ -205,7 +202,7 @@ export const Game3D = () => {
           </mesh>
           
           {/* Aiming Direction Line */}
-          {gameState.isAiming && (
+          {gameState.isAiming && gameState.power > 0 && (
             <AimingLine 
               start={ballPosition}
               direction={gameState.aimDirection}
@@ -249,7 +246,7 @@ const GolfBall3D = ({
 
   // Physics update
   const updatePhysics = useCallback(() => {
-    if (!isMoving || !ballRef.current) return;
+    if (!isMoving) return;
 
     const newPos = position.clone();
     const newVel = velocity.clone();
@@ -288,19 +285,19 @@ const GolfBall3D = ({
   }, [isMoving, position, velocity, onPositionChange, onVelocityChange, onMovingChange, onHoleReached]);
 
   // Animation loop
-  const animate = useCallback(() => {
-    updatePhysics();
-    if (isMoving) {
-      requestAnimationFrame(animate);
-    }
-  }, [updatePhysics, isMoving]);
-
-  // Start animation when ball starts moving
   React.useEffect(() => {
-    if (isMoving) {
-      animate();
-    }
-  }, [isMoving, animate]);
+    if (!isMoving) return;
+
+    const animate = () => {
+      updatePhysics();
+      if (isMoving) {
+        requestAnimationFrame(animate);
+      }
+    };
+
+    const animationId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(animationId);
+  }, [isMoving, updatePhysics]);
 
   return (
     <Sphere 
