@@ -6,7 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import Levels from "./pages/Levels";
 import NotFound from "./pages/NotFound";
-import { MiniGolfGame } from "./components/MiniGolfGame";
+import { Game3D } from "./components/Game3D";
 
 const queryClient = new QueryClient();
 
@@ -19,7 +19,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/levels" element={<Levels />} />
-          <Route path="/game/:levelId" element={<MiniGolfGame />} />
+          <Route path="/game/:levelId" element={<Game3D />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
