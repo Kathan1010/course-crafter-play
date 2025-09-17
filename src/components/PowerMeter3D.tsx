@@ -107,6 +107,10 @@ export const PowerMeter3D = ({
     e.preventDefault();
     if (!isAiming) {
       onStartAiming();
+      // begin charging on next tick to allow parent state to update
+      setTimeout(() => {
+        startCharging();
+      }, 0);
     } else {
       startCharging();
     }

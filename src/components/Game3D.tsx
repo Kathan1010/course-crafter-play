@@ -63,13 +63,15 @@ export const Game3D = () => {
   }, []);
 
   const shoot = useCallback(() => {
-    if (!gameState.isAiming || gameState.power === 0) return;
+    if (isMoving || gameState.power === 0 || gameState.levelComplete) return;
 
     const power = gameState.power / 100;
-    const velocityX = gameState.aimDirection.x * power * 15;
-    const velocityZ = gameState.aimDirection.z * power * 15;
+    const rawDir = new THREE.Vector3(gameState.aimDirection.x, 0, gameState.aimDirection.z);
+    if (rawDir.lengthSq() === 0) rawDir.set(0, 0, -1); // default toward hole if no aim
+    const direction = rawDir.normalize();
+    const velocity = direction.multiplyScalar(power * 15);
 
-    setBallVelocity(new THREE.Vector3(velocityX, 0, velocityZ));
+    setBallVelocity(new THREE.Vector3(velocity.x, 0, velocity.z));
     setIsMoving(true);
     setGameState(prev => ({ 
       ...prev, 
@@ -83,7 +85,7 @@ export const Game3D = () => {
       title: "Shot!",
       description: `Stroke ${gameState.strokes + 1}`,
     });
-  }, [gameState, toast]);
+  }, [gameState.power, gameState.aimDirection, gameState.levelComplete, toast, isMoving]);
 
   const handleHoleReached = useCallback(() => {
     if (gameState.levelComplete) return;
