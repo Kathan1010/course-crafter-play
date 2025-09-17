@@ -63,11 +63,19 @@ export const Game3D = () => {
   }, []);
 
   const shoot = useCallback((input?: { power: number; direction: { x: number; z: number } }) => {
-    if (isMoving || gameState.levelComplete) return;
+    console.log('Shoot called, isMoving:', isMoving, 'levelComplete:', gameState.levelComplete);
+    if (isMoving || gameState.levelComplete) {
+      console.log('Shot blocked - isMoving:', isMoving, 'levelComplete:', gameState.levelComplete);
+      return;
+    }
 
     const pct = (input?.power ?? gameState.power);
-    if (!pct || pct <= 0) return;
+    if (!pct || pct <= 0) {
+      console.log('Shot blocked - no power:', pct);
+      return;
+    }
 
+    console.log('Shooting with power:', pct, 'direction:', input?.direction ?? gameState.aimDirection);
     const power = pct / 100;
     const dir = input?.direction ?? gameState.aimDirection;
     const rawDir = new THREE.Vector3(dir.x, 0, dir.z);
@@ -281,9 +289,12 @@ const GolfBall3D = ({
 
     // Stop if velocity is very low
     if (newVel.length() < 0.1) {
+      console.log('Ball stopped, velocity:', newVel.length());
       newVel.set(0, 0, 0);
       onMovingChange(false);
     }
+
+    console.log('Ball moving, velocity:', newVel.length(), 'isMoving:', isMoving);
 
     onPositionChange(newPos);
     onVelocityChange(newVel);
