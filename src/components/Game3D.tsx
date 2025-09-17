@@ -256,13 +256,21 @@ const GolfBall3D = ({
   onHoleReached 
 }: any) => {
   const ballRef = useRef<any>();
+  const isMovingRef = useRef<boolean>(isMoving);
+  const positionRef = useRef(position);
+  const velocityRef = useRef(velocity);
+  const rafRef = useRef<number | null>(null);
+
+  React.useEffect(() => { isMovingRef.current = isMoving; }, [isMoving]);
+  React.useEffect(() => { positionRef.current = position; }, [position]);
+  React.useEffect(() => { velocityRef.current = velocity; }, [velocity]);
 
   // Physics update
   const updatePhysics = useCallback(() => {
-    if (!isMoving) return;
+    if (!isMovingRef.current) return;
 
-    const newPos = position.clone();
-    const newVel = velocity.clone();
+    const newPos = positionRef.current.clone();
+    const newVel = velocityRef.current.clone();
 
     // Apply velocity
     newPos.add(newVel.clone().multiplyScalar(0.016)); // 60fps
@@ -298,6 +306,8 @@ const GolfBall3D = ({
 
     onPositionChange(newPos);
     onVelocityChange(newVel);
+    positionRef.current = newPos;
+    velocityRef.current = newVel;
   }, [isMoving, position, velocity, onPositionChange, onVelocityChange, onMovingChange, onHoleReached]);
 
   // Animation loop
@@ -306,13 +316,16 @@ const GolfBall3D = ({
 
     const animate = () => {
       updatePhysics();
-      if (isMoving) {
-        requestAnimationFrame(animate);
+      if (isMovingRef.current) {
+        rafRef.current = requestAnimationFrame(animate);
       }
     };
 
-    const animationId = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animationId);
+    rafRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
   }, [isMoving, updatePhysics]);
 
   return (
