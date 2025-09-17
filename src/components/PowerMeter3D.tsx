@@ -8,7 +8,7 @@ interface PowerMeter3DProps {
   aimDirection: { x: number, z: number };
   onStartAiming: () => void;
   onUpdateAim: (direction: { x: number, z: number }, power: number) => void;
-  onShoot: () => void;
+  onShoot: (power: number, direction: { x: number, z: number }) => void;
 }
 
 export const PowerMeter3D = ({ 
@@ -41,6 +41,13 @@ export const PowerMeter3D = ({
       handlePowerStop();
     }
   }, [chargePower, isCharging]);
+
+  // Sync aim/power to parent after render to avoid render-phase updates
+  useEffect(() => {
+    if (isAiming) {
+      onUpdateAim(currentDirection, chargePower);
+    }
+  }, [isAiming, currentDirection, chargePower, onUpdateAim]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
     if (!isAiming || !isDraggingRef.current) return;
@@ -80,11 +87,7 @@ export const PowerMeter3D = ({
     setChargePower(0);
     
     chargingIntervalRef.current = setInterval(() => {
-      setChargePower(prev => {
-        const newPower = Math.min(prev + 3, 100);
-        onUpdateAim(currentDirection, newPower);
-        return newPower;
-      });
+      setChargePower(prev => Math.min(prev + 3, 100));
     }, 50);
   }, [currentDirection, onUpdateAim, isCharging]);
 
@@ -98,10 +101,10 @@ export const PowerMeter3D = ({
     }
     
     if (chargePower > 0) {
-      onShoot();
+      onShoot(chargePower, currentDirection);
     }
     setChargePower(0);
-  }, [isCharging, chargePower, onShoot]);
+  }, [isCharging, chargePower, currentDirection, onShoot]);
 
   const handlePowerMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();

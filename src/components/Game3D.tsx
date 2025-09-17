@@ -62,14 +62,17 @@ export const Game3D = () => {
     }));
   }, []);
 
-  const shoot = useCallback(() => {
-    if (isMoving || gameState.power === 0 || gameState.levelComplete) return;
+  const shoot = useCallback((input?: { power: number; direction: { x: number; z: number } }) => {
+    if (isMoving || gameState.levelComplete) return;
 
-    const power = gameState.power / 100;
-    const rawDir = new THREE.Vector3(gameState.aimDirection.x, 0, gameState.aimDirection.z);
-    if (rawDir.lengthSq() === 0) rawDir.set(0, 0, -1); // default toward hole if no aim
-    const direction = rawDir.normalize();
-    const velocity = direction.multiplyScalar(power * 15);
+    const pct = (input?.power ?? gameState.power);
+    if (!pct || pct <= 0) return;
+
+    const power = pct / 100;
+    const dir = input?.direction ?? gameState.aimDirection;
+    const rawDir = new THREE.Vector3(dir.x, 0, dir.z);
+    if (rawDir.lengthSq() === 0) rawDir.set(0, 0, -1);
+    const velocity = rawDir.normalize().multiplyScalar(power * 15);
 
     setBallVelocity(new THREE.Vector3(velocity.x, 0, velocity.z));
     setIsMoving(true);
@@ -224,7 +227,7 @@ export const Game3D = () => {
               aimDirection={gameState.aimDirection}
               onStartAiming={startAiming}
               onUpdateAim={updateAim}
-              onShoot={shoot}
+              onShoot={(power, direction) => shoot({ power, direction })}
             />
           </div>
         </div>
